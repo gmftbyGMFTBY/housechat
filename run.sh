@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# ./run.sh train bert 2,3
+
 mode=$1
 model=$2
 cuda=$3
