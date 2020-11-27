@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
-import os, csv, ipdb, torch
+import os, csv, ipdb, torch, random
 from transformers import BertTokenizer
 from tqdm import tqdm
 
@@ -14,13 +14,16 @@ def read_query(path):
 def read_post(path, mode='train'):
     with open(path) as f:
         csv_f = csv.reader(f, delimiter='\t')
-        dataset, cache, cache_id = [], [], 0
+        dataset, cache, cache_id, legal_counter = [], [], 0, 0
         for line in csv_f:
             if mode == 'train':
                 session_id, _, utterance, label = line
                 if int(session_id) == cache_id:
                     cache.append((utterance, int(label)))
                 else:
+                    labels = [i[1] for i in cache]
+                    if 1 in labels:
+                        legal_counter += 1
                     dataset.append(cache)
                     cache = [(utterance, int(label))]
                     cache_id += 1
@@ -34,7 +37,7 @@ def read_post(path, mode='train'):
                     cache_id += 1
         if cache:
             dataset.append(cache)
-    print(f'[!] find {len(dataset)} responses from {path}')
+    print(f'[!] find {len(dataset)} responses from {path}; {round(legal_counter/len(dataset), 4)} samples are legal.')
     return dataset
 
 class HouseChatDataset(Dataset):
@@ -42,6 +45,7 @@ class HouseChatDataset(Dataset):
     def __init__(self, mode='train', max_length=256):
         self.max_len, self.mode = max_length, mode
         self.vocab = BertTokenizer.from_pretrained('bert-base-chinese')
+        # self.vocab = AutoTokenizer.from_pretrained("hfl/chinese-roberta-wwm-ext-large")
         self.save_path = f'data/{mode}.pt'
         if os.path.exists(self.save_path):
             self.data = torch.load(self.save_path)

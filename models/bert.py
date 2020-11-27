@@ -26,16 +26,16 @@ class BERTRetrievalAgent:
         except:
             raise Exception(f'[!] multi gpu ids are needed, but got: {multi_gpu}')
         self.args = {
-            'lr': 1e-5,
+            'lr': 2e-5,
             'grad_clip': 1.0,
             'samples': 10,
             'multi_gpu': self.gpu_ids,
             'max_len': 256,
-            'vocab_file': 'bert-base-chinese',
+            'vocab_file': "bert-base-chinese",
             'warmup_ratio': 0.1,
             'total_steps': total_steps,
             'pad': 0,
-            'model': 'bert-base-chinese',
+            'model': "bert-base-chinese",
             'amp_level': 'O2',
             'local_rank': local_rank,
         }
@@ -120,7 +120,28 @@ class BERTRetrievalAgent:
         for idx, batch in enumerate(pbar):
             cid, token_type_ids, attn_mask = batch
             output = self.model(cid, token_type_ids, attn_mask)    # [batch, 2]
+            # NOTE: 0.5 need to be fine-tuned
             output = (F.softmax(output, dim=-1)[:, 1] > 0.5).tolist()    # [batch]
+            output = [1 if i else 0 for i in output]
+            rest.extend(
+                [f'{batch_num}\t{idx}\t{label}\n' for idx, label in zip(range(len(output)), output)]
+            )
+            batch_num += 1
+        with open(path, 'w') as f:
+            for line in rest:
+                f.write(line)
+        print(f'[!] write the rest into the file {path}')
+        
+    @torch.no_grad()
+    def generate(self, test_iter, path, threshold=0.8):
+        self.model.eval()
+        pbar = tqdm(test_iter)
+        rest, batch_num = [], 0
+        for idx, batch in enumerate(pbar):
+            cid, token_type_ids, attn_mask = batch
+            output = self.model(cid, token_type_ids, attn_mask)    # [batch, 2]
+            # NOTE: 0.5 need to be fine-tuned
+            output = (F.softmax(output, dim=-1)[:, 1] > threshold).tolist()    # [batch]
             output = [1 if i else 0 for i in output]
             rest.extend(
                 [f'{batch_num}\t{idx}\t{label}\n' for idx, label in zip(range(len(output)), output)]

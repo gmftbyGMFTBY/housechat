@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ./run.sh train bert 2,3
+# ./run.sh <train/test> bert 2,3
 
 mode=$1
 model=$2
@@ -19,7 +19,7 @@ if [ $mode = 'train' ]; then
     CUDA_VISIBLE_DEVICES=$cuda python -m torch.distributed.launch --nproc_per_node=${#gpu_ids[@]} --master_addr 127.0.0.1 --master_port 29400 main.py \
             --model $model \
             --mode train \
-            --batch_size 32 \
+            --batch_size 64 \
             --epoch 5 \
             --seed 50 \
             --max_length 256 \
@@ -32,6 +32,16 @@ elif [ $mode = 'test' ]; then
         --max_length 256 \
         --seed 50 \
         --multi_gpu $cuda
+elif [ $mode = 'generate' ]; then
+    CUDA_VISIBLE_DEVICES=$cuda python main.py \
+        --model $model \
+        --mode generate \
+        --batch_size 1 \
+        --max_length 256 \
+        --seed 50 \
+        --multi_gpu $cuda \
+        --threshold 0.5
+    python -m data.construct
 else
     echo '[!] wrong mode find: $mode'
 fi

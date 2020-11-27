@@ -19,6 +19,7 @@ def parser_args():
     parser.add_argument('--max_length', type=int, default=256)
     parser.add_argument('--multi_gpu', type=str, default=None)
     parser.add_argument('--local_rank', type=int)
+    parser.add_argument('--threshold', type=float, default=0.5)
     return parser.parse_args()
 
 def main(**args):
@@ -41,7 +42,7 @@ def main(**args):
             if args['local_rank'] == 0:
                 agent.save_model(f'ckpt/{args["model"]}/best.pt')
         sum_writer.close()
-    else:
+    elif args['mode'] == 'test':
         args['total_steps'] = 0
         data = HouseChatDataset(mode='test', max_length=args['max_length'])
         iter_ = DataLoader(data, shuffle=False, batch_size=args['batch_size'], collate_fn=data.collate)
@@ -49,6 +50,14 @@ def main(**args):
         agent.load_model(f'ckpt/{args["model"]}/best.pt')
         rest_path = f'rest/{args["model"]}/rest.txt'
         test_loss = agent.test_model(iter_, rest_path)
+    elif args['mode'] == 'generate':
+        args['total_steps'] = 0
+        data = HouseChatDataset(mode='test', max_length=args['max_length'])
+        iter_ = DataLoader(data, shuffle=False, batch_size=args['batch_size'], collate_fn=data.collate)
+        agent = load_model(args)
+        agent.load_model(f'ckpt/{args["model"]}/best.pt')
+        rest_path = f'rest/{args["model"]}/generate.txt'
+        test_loss = agent.generate(iter_, rest_path)
 
 if __name__ == "__main__":
     args = parser_args()
