@@ -14,7 +14,7 @@ https://www.datafountain.cn/competitions/474
 本文中使用的方法类似于 `SA-BERT` 中的架构，因为问答匹配对是单轮并不是多轮的格式，所以我们在这里忽略了 `SA-BERT` 中的 speaker-aware 信息，
 只利用了对应的utterance的 `token_type_ids` (segment embedding，使用segment embedding的原因在于辅助模型区分context和response) ，`position ids` 和 `mask` 信息进行训练，模型整体架构图如下：
 
-![](./img/img1.png)
+![](./img1.png)
 
 ## 使用方法
 
