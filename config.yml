@@ -1,0 +1,17 @@
+authorName: default
+experimentName: example_dialog
+trialConcurrency: 1
+maxExecDuration: 1h
+maxTrialNum: 100
+trainingServicePlatform: local
+searchSpacePath: search_space.json
+useAnnotation: false
+tuner:
+  builtinTunerName: Evolution
+  classArgs:
+    optimize_mode: maximize
+    population_size: 20
+trial:
+  command: python nni_search.py --model bert --mode train --epoch 5 --max_length 256 --batch_size 64 
+  codeDir: .
+  gpuNum: 1
